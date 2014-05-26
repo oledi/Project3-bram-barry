@@ -1,0 +1,57 @@
+@charset "utf-8";
+/* CSS Document */
+
+html, body {
+	background-color: #fff3d4;
+	height: 100%;
+	min-height: 100%;
+}
+#wrapper {
+	background-color: #fff3d4;
+	width: 100%;
+	min-height: 100%;
+	height: auto !important;
+	height: 100%;
+	margin: 0 auto -60px;
+}
+#header {
+	background-color: #fff3d4;
+	height: 39px;
+	line-height: 39px;
+	text-align: center;
+}
+#header h1 {
+	color: #333;
+	font-size: 20px;
+	font-weight: light;
+    font-family:sans-serif;
+}
+#content {
+
+	text-align: center;
+	height: auto;
+}
+#content p {
+	margin: 10px 0px;
+}
+#content strong {
+	font-weight: bold;	
+}
+#content h2 {
+	font-weight: bold;
+}
+#content img {
+	margin: 5px 0px;
+	width: 280px;
+	border: 1px solid #000;
+}
+#footer p {
+	float: right;
+	margin-right: 5px;
+	font-weight: bold;
+	color: #fff;
+}
+#map {	
+	min-height: 340px;
+	width: 320px;
+}

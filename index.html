@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="stylesheet" type="text/css" href="css/reset.css" />
+<link rel="stylesheet" type="text/css" href="css/main.css" />
+<title>GPS sensor test</title>
+<script type="text/javascript" src="script/latlon.js"></script>
+<script type="text/javascript" src="script/geo.js"></script>
+<script type="text/javascript" src="cordova.js"></script>
+</head>
+<body onLoad="loadDemo();">
+    
+    
+<div id="wrapper">
+  <div id="header">
+    <h1></h1>
+  </div>
+  <div id="content">
+    <div id="map"></div>
+  </div>
+	<div id="graden"></div>
+    <div id="heading" style="text-align:center; font-family:sans-serif;"></div>
+    <button style="float:left;" onclick="startWatch();">Start Watching</button>
+    <button style="float:right;" onclick="stopWatch();">Stop Watching</button>
+</div>
+
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false&key=AIzaSyCcnsJjqMazFCST-tCzcxY0sKyt2VA6jg4"></script>
+<script type="text/javascript" src="script/index.js"></script>
+</body>
+</html>
