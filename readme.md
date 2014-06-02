@@ -1,0 +1,3 @@
+- repository -> zinnige commit messages
+- 5 pull request geven, 3 ontvangen
+- geef aan welke optimalisaties je hebt gedaan (readme.md)
