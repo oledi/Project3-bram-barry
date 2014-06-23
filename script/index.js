@@ -1,198 +1,325 @@
+var APP = APP || {};
 
-// JavaScript Document
-
-// The watch id references the current `watchHeading`
-    var watchID = null;
-
-    var currentHeading = null;
-
-    // Wait for device API libraries to load
-    //
-    document.addEventListener("deviceready", onDeviceReady, false);
-
-    // device APIs are available
-    //
-    function onDeviceReady() {
-        startWatch();
-    }
-
-    // Start watching the compass
-    //
-    function startWatch() {
-
-        // Update compass every 3 seconds
-        var options = { frequency: 100 };
-
-        watchID = navigator.compass.watchHeading(onSuccess, onError, options);
-    }
-
-    // Stop watching the compass
-    //
-    function stopWatch() {
-        if (watchID) {
-            navigator.compass.clearWatch(watchID);
-            watchID = null;
+(function () {
+  
+    APP.controller = {
+      
+        init: function () {
+            
+			navigator.splashscreen.hide();
+            
+            console.log("APP JS works");
+            
+            APP.interaction.init();
+            APP.map.init();
         }
-    }
-
-    // onSuccess: Get the current heading
-    //
-    function onSuccess(heading) {
-        var element = document.getElementById('heading');
-        element.innerHTML = heading.magneticHeading;
-        currentHeading = heading.magneticHeading;
-    }
-
-    // onError: Failed to get the heading
-    //
-    function onError(compassError) {
-        alert('Compass error: ' + compassError.code);
-    }
-        
-        
-        
-       // Wait for device API libraries to load
-    //
-    document.addEventListener("deviceready", onDeviceReady, false);
-
-    // device APIs are available
-    //
-    function onDeviceReady() {
-        // Empty
-    }
-
-    // Beep three times
-    //
-    function playBeep() {
-        navigator.notification.beep(3);
-    }
-
-    // Vibrate for 2 seconds
-    //
-    function vibrate() {
-        navigator.notification.vibrate(2000);
-    }
-
-
-
-
-
-
-var POIArray = new Array(new Array(52.700600236554045, 5.291880369186401, "Locatie 1", "amstelhotel"));
-            var circleRadius = 10; 
-            var zoom = 16; 
-            var map;
-            var player;
-            var marker;
-            var circleArray = new Array();
-            var circle;
-
-
-
-    function loadDemo()
-            {
-                if(navigator.geolocation)
-                {
-
-
-                    // Create a Google Map… see Google API for more detail - willekeurige startpositie Australie
-                    var myLatlng = new google.maps.LatLng(52.358937, 4.908957);
-                    var myOptions = {
-                        zoom: zoom,
-                        center: myLatlng,
-                        mapTypeId: google.maps.MapTypeId.ROADMAP
-                    };
-
-                    map = new google.maps.Map(document.getElementById("map"), myOptions);
-
-                    // Place the player
-                    player = new google.maps.Marker({
-                        position: myLatlng,
-                        map: map,
-                        //mouse-over op desktop
-                        title:"CMD"
-                    });
-
-
-                    // voer de coordinaten van de poi in
-                    // zet markers voor elk POI
-                    var i=0;
-                    for (i=0;i<POIArray.length;i++) {
-                        var markerLatlng = new google.maps.LatLng(POIArray[i][0],POIArray[i][1])
-                        // Place a hit marker
-                        marker = new google.maps.Marker({
-                            position:  markerLatlng,
-                            map: map,
-                            
-                            //mouse over op desktop
-                            title:POIArray[i][2]
-                        });
-
-                        // Place a circle that will cause the push
-                        circle = new google.maps.Circle({
-                            map: map,
-                            radius: circleRadius
-                        });
-                        circle.setCenter(markerLatlng);
-                        circleArray.push(circle);
-                    }
-
-
-                    // Start watchPosition
-                    navigator.geolocation.watchPosition(updateLocation, handleLocationError,
-                    {enableHighAccuracy: true,
-                        maximumAge: 200,
-                        timeout: 100
-                    });
-                }
-            }
-
-            /*De attributen krijgen een
-            waarde*/
-            function updateLocation(position)
-            {
-                // Extract latitude and longitude
-                var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-                map.setCenter(latlng);
-                map.setZoom(zoom);
-                // Move the marker
-                player.setPosition(latlng);
-
-
-
-                var p1 = new LatLon(position.coords.latitude, position.coords.longitude);  
-                var p2 = new LatLon(52.700600236554045, 5.291880369186401);                                                                                                                                                           
-                var brng = p1.bearingTo(p2);                         
+    };
     
-                document.getElementById('graden').innerHTML = brng;
+    APP.settings = {
+        
+        user: null,
+        watchID: null,
+        firstLocation: null,
+        currentHeading: null,
+        globalLat: null,
+        globalLon: null,
+        baseLat: null,
+        baseLon: null,
+        placesRadius: 100,
+        placesArray: [],
+        placesHeadingArray: [],
+        mapZoom: 16,
+		dayMapping: ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'],
+		locationOpen: 'false'		
+    };
+    
+    APP.interaction = {
+      
+        init: function () {
+             
+            APP.interaction.compassBtn();
+        },
+        compassBtn: function () {
 
-
-                  if ((currentHeading > (parseInt(brng) - 10)) && currentHeading < (parseInt(brng) + 10)) {
-                        navigator.notification.vibrate(100);
-                        var kop = document.getElementById('header');
-                        kop.innerHTML = 'Deze kant!';
-                }
-
+            var btn = document.getElementById('startkompas');  
+            btn.onclick = function() { 
+                
+                APP.compass.init();                
             }
+        }
+    };   
+    
+    APP.compass = {
+        
+        init: function () {
+             
+            APP.compass.startWatch();
+        },        
+        startWatch: function () {
 
-            function handleLocationError(error)
+            document.getElementById('startkompas').style.display = 'none';
+            document.getElementById('aanwijzing').style.display = 'block';
+
+            var options = { frequency: 100, timeout: 10000, enableHighAccuracy: false };
+
+            APP.settings.watchID = navigator.compass.watchHeading(APP.compass.onSuccess, APP.compass.onError, options);
+
+            APP.compass.matchHeading();
+        },    
+        stopWatch: function () {
+            
+            if (APP.settings.watchID) {
+                
+                navigator.compass.clearWatch(APP.settings.watchID);
+                APP.settings.watchID = null;
+            }
+        },
+        onSuccess: function (heading) {
+                          
+            APP.settings.currentHeading = heading.magneticHeading;
+            
+            var headingDiv = document.getElementById('heading');                            
+            headingDiv.innerHTML = APP.settings.currentHeading;          
+        },
+        onError: function (compassError) {
+            
+            //alert('Compass error\n code: ' + error.code + '\n' + 'message: ' + error.message + '\n');
+        },
+        matchHeading: function () {
+            
+            console.log("matchHeading");
+
+            APP.settings.placesArray = [];
+			
+            jQuery.ajax({
+                dataType: 'json',
+                url: 'https://maps.googleapis.com/maps/api/place/search/json?key=AIzaSyD8TqIqz6zTXDLBU2otYH8gByMGwX2t7H0&location=' + APP.settings.globalLat + ',' + APP.settings.globalLon + '&radius=25&sensor=false&types=amusement_park|art_gallery|bar|book_store|cafe|church|city_hall|embassy|fire_station|hospital|library|mosque|museum|night_club|place_of_worship|police|restaurant|school|spa|synagogue|train_station|zoo',
+                success: function(response) {
+                
+                    for (var i = 0; i < response.results.length; i++) {
+                        
+                        var placeArray = [];
+                        
+                        placeArray[0] = response.results[i].geometry.location.lat;
+                        placeArray[1] = response.results[i].geometry.location.lng;
+                        placeArray[2] = response.results[i].name;
+                        placeArray[3] = response.results[i].reference;
+						placeArray[4] = response.results[i].icon;
+
+                        APP.settings.placesArray.push(placeArray);
+
+                        if (i == response.results.length - 1) {
+
+                            setInterval(function() {
+                                APP.compass.executeHeading();
+                            }, 2000);
+                        }
+                    }
+                }
+            });
+			
+			APP.settings.locationOpen = 'false';
+
+			$('#weertijd').show();	
+			$('#location').removeClass('locationOpen');
+			$('#pijlbeneden').removeClass('pijlbenedenLocationOpen');
+			$('#loccontent').removeClass('localContentLocationOpen');
+
+			$('#locp').hide();
+			$('#locfotocontainer').hide();
+			$('#locphone').hide();
+			$('#openingstijdencontainer').hide();
+        },
+        executeHeading: function() {
+            
+            APP.settings.placesHeadingArray = [];
+			
+			if(APP.settings.locationOpen == 'false') {
+			
+				for (var a = 0; a < APP.settings.placesArray.length; a++) {
+
+					var headingArray = [];
+
+					var p1 = new LatLon(APP.settings.globalLat, APP.settings.globalLon);  
+					var p2 = new LatLon(APP.settings.placesArray[a][0], APP.settings.placesArray[a][1]);            
+					var brng = p1.bearingTo(p2);
+
+					headingArray[0] = brng;
+					headingArray[1] = a;  
+
+					APP.settings.placesHeadingArray.push(headingArray);
+
+					if (a == APP.settings.placesArray.length - 1) {
+
+						for (var b = 0; b < APP.settings.placesHeadingArray.length; b++) {
+							console.log(APP.settings.placesHeadingArray[b][0]);
+
+							if ((APP.settings.currentHeading > (parseInt(APP.settings.placesHeadingArray[b][0]) - 10)) && APP.settings.currentHeading < (parseInt(APP.settings.placesHeadingArray[b][0]) + 10)) {                     				
+								$('#aanwijzing').hide();
+								$('#gevondenloc').show();
+
+								var reference = APP.settings.placesArray[APP.settings.placesHeadingArray[b][1]][3];
+								$('#gevondenloch3').html(APP.settings.placesArray[APP.settings.placesHeadingArray[b][1]][2]);
+
+								$('#gevondenlocfoto').attr('src', APP.settings.placesArray[APP.settings.placesHeadingArray[b][1]][4]);
+
+								var pijlbeneden = document.getElementById('pijlbeneden');
+
+								pijlbeneden.onclick = function() {
+									APP.map.showLocationInfo(reference);
+								}
+
+							} else {
+
+								$('#aanwijzing').show();
+								$('#gevondenloc').hide();							
+								$('#aanwijzing').html('Richt je smartphone op een locatie');
+							}
+						}
+					}
+				}
+			}
+        }
+    };
+    
+    APP.map = {
+        
+        init: function () {
+             
+            APP.map.setFirstLocation();
+        },
+        setFirstLocation: function () {
+            
+            if(navigator.geolocation)
             {
-                switch(error.code)
-                {
-                    case 0:
-                        updateStatus("There was an error while retrieving your location: " +  error.message);
-                        break;
+                APP.settings.firstLocation = navigator.geolocation.getCurrentPosition(APP.map.showPosition);
+            }            
+        },
+        showPosition: function (position) {
+        
+            APP.settings.baseLat = position.coords.latitude;
+            APP.settings.baseLon = position.coords.longitude;
 
-                    case 1:
-                        updateStatus("The user prevented this page from retrieving a location.");
-                        break;
+            APP.settings.globalLat = position.coords.latitude;
+            APP.settings.globalLon = position.coords.longitude;
 
-                    case 2:
-                        updateStatus("The browser was unable to determine your location: " +  error.message);
-                        break;
+            var myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            var myOptions = {
+                zoom: APP.settings.mapZoom,
+                center: myLatlng,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                disableDefaultUI: true
+            };
 
-                    case 3:
-                        updateStatus("The browser timed out before retrieving the location.");
-                        break;
-                }
+            map = new google.maps.Map(document.getElementById("map"), myOptions);
+
+            APP.settings.user = new google.maps.Marker({
+                position: myLatlng,
+                map: map,
+                title: "Gebruiker"
+            });
+
+            navigator.geolocation.watchPosition(APP.map.updateLocation, APP.map.handleLocationError,
+            {
+                enableHighAccuracy: true,
+                maximumAge: 3000,   //1000 bram
+                timeout: 5000,      //100 bram
+                frequency: 2000
+            });
+        },
+        updateLocation: function (position) {
+        
+            APP.settings.globalLat = position.coords.latitude;
+            APP.settings.globalLon = position.coords.longitude;
+
+            var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            
+            map.setCenter(latlng);
+            map.setZoom(APP.settings.mapZoom);
+
+            APP.settings.user.setPosition(latlng);
+
+            var point1 = new LatLon(APP.settings.baseLat, APP.settings.baseLon);  
+            var point2 = new LatLon(APP.settings.globalLat, APP.settings.globalLon);
+			
+            var distance = point1.distanceTo(point2);
+
+            if (distance > 0.025) {
+                
+                APP.compass.matchHeading();
+                APP.settings.baseLat = APP.settings.globalLat;
+                APP.settings.baseLon = APP.settings.globalLon;
+                distance = 0;
             }
+        },
+        handleLocationError: function (error) {
+            
+            //alert('Map error\n code: ' + error.code + '\n' + 'message: ' + error.message + '\n');
+        },
+		showLocationInfo: function (reference) {
+			
+			if (APP.settings.locationOpen == 'false') {
+				APP.settings.locationOpen = 'true';
+				
+				$('#weertijd').hide();				
+				$('#location').addClass('locationOpen');
+				$('#pijlbeneden').addClass('pijlbenedenLocationOpen');
+				$('#loccontent').addClass('localContentLocationOpen');
+
+				$.ajax({
+					dataType: 'json',
+					url: 'https://maps.googleapis.com/maps/api/place/details/json?reference=' + reference + '&sensor=true&key=AIzaSyD8TqIqz6zTXDLBU2otYH8gByMGwX2t7H0',
+					success: function(response) {
+						
+						response.result.formatted_address = response.result.formatted_address.replace(', Nederland', '');						
+						$('#locp').html(response.result.formatted_address);
+						$('#locp').show();
+
+						if(response.result.photos != "undefined") {
+							var foto = 'https://maps.googleapis.com/maps/api/place/photo?maxheight=240&photoreference=' + response.result.photos[0].photo_reference + '&sensor=true&key=AIzaSyD8TqIqz6zTXDLBU2otYH8gByMGwX2t7H0';
+							
+							$('#locfoto').attr('src', foto);
+							$('#locfotocontainer').show();
+						}
+
+						if(response.result.international_phone_number != "undefined") {
+							$('#locphone').attr('href', 'tel:' + response.result.international_phone_number);
+							$('#locphone').show();
+						}
+
+						if(response.result.opening_hours != "undefined") 
+						{
+							$('#openingstijden').empty();
+							
+							if ($('#openingstijden li').length < 1) {
+								for(var i = 0; i < response.result.opening_hours.periods.length; i++)
+								{                                
+									$('#openingstijden').append('<li>' + APP.settings.dayMapping[response.result.opening_hours.periods[i].open.day] + ' - ' + response.result.opening_hours.periods[i].open.time + ' - '+ response.result.opening_hours.periods[i].close.time + '</li>');
+								}
+								
+								$('#openingstijdencontainer').show();
+							}
+						}
+					}
+				});
+
+			} else {
+				
+				APP.settings.locationOpen = 'false';
+				
+				$('#weertijd').show();	
+				$('#location').removeClass('locationOpen');
+				$('#pijlbeneden').removeClass('pijlbenedenLocationOpen');
+				$('#loccontent').removeClass('localContentLocationOpen');
+				
+				$('#locp').hide();
+				$('#locfotocontainer').hide();
+				$('#locphone').hide();
+				$('#openingstijdencontainer').hide();
+			}		
+		}
+    };
+
+    document.addEventListener("deviceready", APP.controller.init, false);
+       
+})();

@@ -39,6 +39,24 @@ function LatLon(lat, lon, radius) {
     this.radius = Number(radius);
 }
 
+LatLon.prototype.distanceTo = function(point, precision) {
+    // default 4 significant figures reflects typical 0.3% accuracy of spherical model
+    if (typeof precision == 'undefined') precision = 4;
+  
+    var R = this.radius;
+    var nieuw1 = this.lat.toRadians(),  nieuw5 = this.lon.toRadians();
+    var nieuw2 = point.lat.toRadians(), nieuw6 = point.lon.toRadians();
+    var nieuw3 = nieuw2 - nieuw1;
+    var nieuw4 = nieuw6 - nieuw5;
+
+    var a = Math.sin(nieuw3/2) * Math.sin(nieuw3/2) +
+            Math.cos(nieuw1) * Math.cos(nieuw2) *
+            Math.sin(nieuw4/2) * Math.sin(nieuw4/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    var d = R * c;
+
+    return d.toPrecisionFixed(Number(precision));
+}
 
 
 /**
@@ -75,6 +93,32 @@ if (typeof Number.prototype.toRadians == 'undefined') {
 if (typeof Number.prototype.toDegrees == 'undefined') {
     Number.prototype.toDegrees = function() {
         return this * 180 / Math.PI;
+    }
+}
+
+
+if (typeof Number.prototype.toPrecisionFixed == 'undefined') {
+    Number.prototype.toPrecisionFixed = function(precision) {
+
+        // use standard toPrecision method
+        var n = this.toPrecision(precision);
+
+        // ... but replace +ve exponential format with trailing zeros
+        n = n.replace(/(.+)e\+(.+)/, function(n, sig, exp) {
+            sig = sig.replace(/\./, '');       // remove decimal from significand
+            var l = sig.length - 1;
+            while (exp-- > l) sig = sig + '0'; // append zeros from exponent
+            return sig;
+        });
+
+        // ... and replace -ve exponential format with leading zeros
+        n = n.replace(/(.+)e-(.+)/, function(n, sig, exp) {
+            sig = sig.replace(/\./, '');       // remove decimal from significand
+            while (exp-- > 1) sig = '0' + sig; // prepend zeros from exponent
+            return '0.' + sig;
+        });
+
+        return n;
     }
 }
 
